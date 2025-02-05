@@ -70,7 +70,7 @@ for ($x = $min_x; $x < $max_x; $x += 0.1) {
             $y = $a / $x;
             break;
         default:
-            continue;
+            break;
     }
 
     // 将数学坐标映射为图像坐标
