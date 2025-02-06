@@ -48,11 +48,11 @@ $functions = [
     'sine' => fn($x) => $m * sin($b * $x + $c),
     'cosine' => fn($x) => $m * cos($b * $x + $c),
     'tangent' => fn($x) => $m * tan($b * $x + $c),
-    'triangle' => fn($x) => $m * asin(sin($b * $x + $c)) * (2 / M_PI), // Triangle wave using arcsine
-    'sawtooth' => fn($x) => $m * (fmod($x + $b, 2 * M_PI) - M_PI), // Sawtooth wave
+    'triangle' => fn($x) => $m * asin(sin($b * $x + $c)) * (2 / M_PI),
+    'sawtooth' => fn($x) => $m * (fmod($x + $b, 2 * M_PI) - M_PI),
     'inverse_proportion' => fn($x) => $a / $x + $b,
     'hyperbola' => fn($x) => $a / $x,
-    'square' => fn($x) => $m * (sin($b * $x + $c) >= 0 ? 1 : -1) // 方波生成
+    'square' => fn($x) => $m * (sin($b * $x + $c) >= 0 ? 1 : -1)
 ];
 
 // 绘制函数图像
