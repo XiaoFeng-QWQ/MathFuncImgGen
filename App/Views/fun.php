@@ -1,11 +1,13 @@
 <?php
-$width = 600;
-$height = 400;
-$arrow_size = 10;
-$image = imagecreate($width, $height);
-$fontPath = __DIR__ . '/latinmodern-math.otf';
+define('WIDTH', 700);
+define('HEIGHT', 400);
+define('ARROW_SIZE', 10);
+define('FONT_PATH', __DIR__ . '/latinmodern-math.otf');
+
+$image = imagecreate(WIDTH, HEIGHT);
 $background_color = imagecolorallocate($image, 255, 255, 255);
 $line_color = imagecolorallocate($image, 0, 0, 255);
+$axis_color = imagecolorallocate($image, 0, 0, 0); // 坐标轴颜色
 
 // 方程参数
 $type = isset($_GET['type']) ? $_GET['type'] : '';
@@ -15,62 +17,53 @@ $c = isset($_GET['c']) ? floatval($_GET['c']) : 0;
 $d = isset($_GET['d']) ? floatval($_GET['d']) : 0;
 $a = isset($_GET['a']) ? floatval($_GET['a']) : 0;
 
-// 绘制坐标轴
-$axis_color = imagecolorallocate($image, 0, 0, 0); // 坐标轴颜色
-imageline($image, 0, $height / 2, $width, $height / 2, $axis_color); // X轴
-imageline($image, $width / 2, 0, $width / 2, $height, $axis_color); // Y轴
-
-// 添加箭头
+imageline($image, 0, HEIGHT / 2, WIDTH, HEIGHT / 2, $axis_color); // X轴
+imageline($image, WIDTH / 2, 0, WIDTH / 2, HEIGHT, $axis_color); // Y轴
 // X轴箭头
-imageline($image, $width, $height / 2, $width - $arrow_size, $height / 2 - $arrow_size / 2, $axis_color);
-imageline($image, $width, $height / 2, $width - $arrow_size, $height / 2 + $arrow_size / 2, $axis_color);
+imageline($image, WIDTH, HEIGHT / 2, WIDTH - ARROW_SIZE, HEIGHT / 2 - ARROW_SIZE / 2, $axis_color);
+imageline($image, WIDTH, HEIGHT / 2, WIDTH - ARROW_SIZE, HEIGHT / 2 + ARROW_SIZE / 2, $axis_color);
 // Y轴箭头
-imageline($image, $width / 2, 0, $width / 2 - $arrow_size / 2, $arrow_size, $axis_color);
-imageline($image, $width / 2, 0, $width / 2 + $arrow_size / 2, $arrow_size, $axis_color);
-
+imageline($image, WIDTH / 2, 0, WIDTH / 2 - ARROW_SIZE / 2, ARROW_SIZE, $axis_color);
+imageline($image, WIDTH / 2, 0, WIDTH / 2 + ARROW_SIZE / 2, ARROW_SIZE, $axis_color);
 // 添加轴标签
-imagettftext($image, 20, 0, $width / 2 - 20, $height / 2 + 20, $axis_color, $fontPath, 'o');
-imagettftext($image, 20, 0, $width - 40, $height / 2 + 20, $axis_color, $fontPath, 'x');
-imagettftext($image, 20, 0, $width / 2 + 5, 20, $axis_color, $fontPath, 'y');
+imagettftext($image, 20, 0, WIDTH / 2 - 20, HEIGHT / 2 + 20, $axis_color, FONT_PATH, 'o');
+imagettftext($image, 20, 0, WIDTH - 40, HEIGHT / 2 + 20, $axis_color, FONT_PATH, 'x');
+imagettftext($image, 20, 0, WIDTH / 2 + 5, 20, $axis_color, FONT_PATH, 'y');
+imagettftext($image, 10, 0, 0, HEIGHT - 5, $axis_color, FONT_PATH, 'https://github.com/XiaoFeng-QWQ/MathFuncImgGen');
+imagettftext($image, 10, 0, 0, 15, $axis_color, FONT_PATH, "Type:$type  M:$m  B:$b  C:$c  D:$d  A:$a");
+
 
 // 计算绘制图像的范围
-$min_x = -256;
-$max_x = 256;
-$scale_x = $width / 2; // X轴的比例尺
-$scale_y = $height / 2; // Y轴的比例尺
+$min_x = -WIDTH;
+$max_x = (WIDTH / 2) - ARROW_SIZE;
+// 使线居中
+$scale_x = WIDTH / 2;
+$scale_y = HEIGHT / 2;
+
+// 定义函数计算方法
+$functions = [
+    'linear' => fn($x) => $m * $x + $b,
+    'quadratic' => fn($x) => $m * $x * $x + $b * $x + $c,
+    'cubic' => fn($x) => $m * $x * $x * $x + $b * $x * $x + $c * $x + $d,
+    'sine' => fn($x) => $m * sin($b * $x + $c),
+    'cosine' => fn($x) => $m * cos($b * $x + $c),
+    'tangent' => fn($x) => $m * tan($b * $x + $c),
+    'triangle' => fn($x) => $m * asin(sin($b * $x + $c)) * (2 / M_PI), // Triangle wave using arcsine
+    'sawtooth' => fn($x) => $m * (fmod($x + $b, 2 * M_PI) - M_PI), // Sawtooth wave
+    'inverse_proportion' => fn($x) => $a / $x + $b,
+    'hyperbola' => fn($x) => $a / $x,
+    'square' => fn($x) => $m * (sin($b * $x + $c) >= 0 ? 1 : -1) // 方波生成
+];
 
 // 绘制函数图像
 $prev_x = null;
 $prev_y = null;
 
 for ($x = $min_x; $x < $max_x; $x += 0.1) {
-    switch ($type) {
-        case 'linear':
-            // 一元一次函数 y = mx + b
-            $y = $m * $x + $b;
-            break;
-        case 'quadratic':
-            // 一元二次函数 y = mx^2 + bx + c
-            $y = $m * $x * $x + $b * $x + $c;
-            break;
-        case 'cubic':
-            // 一元三次函数 y = mx^3 + bx^2 + cx + d
-            $y = $m * $x * $x * $x + $b * $x * $x + $c * $x + $d;
-            break;
-        case 'sine':
-            // 正弦函数 y = m * sin(b * x + c)
-            $y = $m * sin($b * $x + $c);
-            break;
-        case 'inverse_proportion':
-            // 反比例函数 y = a / x + b
-            $y = $a / $x + $b;
-            break;
-        case 'hyperbola':
-            // 双曲线函数 y = a / x
-            $y = $a / $x;
-            break;
-        default:
-            break;
+    if (isset($functions[$type])) {
+        $y = $functions[$type]($x);
+    } else {
+        continue;
     }
 
     // 将数学坐标映射为图像坐标
